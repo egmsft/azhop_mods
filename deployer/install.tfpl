@@ -1,10 +1,13 @@
 #!/bin/bash
 
+
+sudo apt-get update
+
 pkgs=(${packages})
 
 for pkg in "$${pkgs[@]}"; do 
 
-    sudo apt install -y $pkg
+    sudo apt-get install -y $pkg
 
 done
 
