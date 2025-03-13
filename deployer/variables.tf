@@ -34,6 +34,11 @@ variable "resource_group_name" {
   type        = string
 }
 
+variable "azhop_rg" {
+  description = "Azhop RG"
+  type        = string  
+}
+
 variable "admin" {
         type = object({
         username = optional(string, "hpcadmin")

@@ -12,9 +12,19 @@ provider "azurerm" {
   skip_provider_registration = true
   features {}
 }
+data "azurerm_subscription" "primary" {
+}
 
 data "azurerm_resource_group" "rg" {
+  name = var.vnet.rg
+}
+
+data "azurerm_resource_group" "deployer_rg" {
   name = var.resource_group_name
+}
+
+data "azurerm_resource_group" "azhop_rg" {
+  name = var.azhop_rg
 }
 
 data "azurerm_virtual_network" "vnet" {
@@ -68,10 +78,45 @@ resource "azurerm_linux_virtual_machine" "deployer" {
   }
 }
 
-# Grant Contributor access to deployer vm in the resource group
-resource "azurerm_role_assignment" "contributor" {
+# Grant Contributor access to deployer vm in the vnet resource group
+resource "azurerm_role_assignment" "contributor_vnet" {
   scope              = data.azurerm_resource_group.rg.id
   role_definition_name = "Contributor"
+  principal_id       = azurerm_linux_virtual_machine.deployer.identity[0].principal_id
+}
+
+# Grant Contributor access to deployer vm in the azhop resource group
+resource "azurerm_role_assignment" "contributor_azhop" {
+  scope              = data.azurerm_resource_group.azhop_rg.id
+  role_definition_name = "Contributor"
+  principal_id       = azurerm_linux_virtual_machine.deployer.identity[0].principal_id
+}
+
+# Grant User Access Administrator access to deployer vm in the azhop resource group
+resource "azurerm_role_assignment" "ua_admin" {
+  scope              = data.azurerm_resource_group.azhop_rg.id
+  role_definition_name = "User Access Administrator"
+  principal_id       = azurerm_linux_virtual_machine.deployer.identity[0].principal_id
+}
+
+# Grant Contributor access to deployer vm in the deployer resource group
+resource "azurerm_role_assignment" "contributor_deployer" {
+  scope              = data.azurerm_resource_group.deployer_rg.id
+  role_definition_name = "Contributor"
+  principal_id       = azurerm_linux_virtual_machine.deployer.identity[0].principal_id
+}
+
+# Grant Subscription Reader access to deployer vm
+resource "azurerm_role_assignment" "reader" {
+  scope              = data.azurerm_subscription.primary.id
+  role_definition_name = "Reader"
+  principal_id       = azurerm_linux_virtual_machine.deployer.identity[0].principal_id
+}
+
+# Grant Subscription Reader access to deployer vm
+resource "azurerm_role_assignment" "access_admin_sub" {
+  scope              = data.azurerm_subscription.primary.id
+  role_definition_name = "User Access Administrator"
   principal_id       = azurerm_linux_virtual_machine.deployer.identity[0].principal_id
 }
 

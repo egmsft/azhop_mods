@@ -8,6 +8,7 @@ vnet =  {
 
 name_prefix = "deployer"
 resource_group_name = ""
+azhop_rg = ""
 
 admin  = {
     username = "hpcadmin"
