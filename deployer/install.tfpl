@@ -1,0 +1,12 @@
+#!/bin/bash
+
+pkgs=(${packages})
+
+for pkg in "$${pkgs[@]}"; do 
+
+    sudo apt install -y $pkg
+
+done
+
+
+echo ${upro_token}

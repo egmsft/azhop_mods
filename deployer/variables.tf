@@ -48,3 +48,17 @@ variable "vm_size" {
   default     = "Standard_B2ms"
   
 }
+
+variable "ubuntu_pro_token" {
+  description = "Ubuntu Pro token for the VM."
+  type        = string
+  default     = ""
+  
+}
+
+variable "packages" {
+  description = "List of packages to install on the VM."
+  type        = list(string)
+  default     = ["wget" , "git"]
+}
+

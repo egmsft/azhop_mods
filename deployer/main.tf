@@ -13,8 +13,8 @@ provider "azurerm" {
   features {}
 }
 
-data "azurerm_resource_group" "vnet_rg" {
-  name = var.vnet.rg
+data "azurerm_resource_group" "rg" {
+  name = var.resource_group_name
 }
 
 data "azurerm_virtual_network" "vnet" {
@@ -66,4 +66,26 @@ resource "azurerm_linux_virtual_machine" "deployer" {
       sku       = var.image.sku
       version   = var.image.version 
   }
+}
+
+# Grant Contributor access to deployer vm in the resource group
+resource "azurerm_role_assignment" "contributor" {
+  scope              = data.azurerm_resource_group.rg.id
+  role_definition_name = "Contributor"
+  principal_id       = azurerm_linux_virtual_machine.deployer.identity[0].principal_id
+}
+
+resource "azurerm_virtual_machine_run_command" "install_run_cmd" {
+  name                = "${var.name_prefix}-install"
+  location            = azurerm_linux_virtual_machine.deployer.location
+  virtual_machine_id  = azurerm_linux_virtual_machine.deployer.id
+
+  source {
+    script = templatefile("${path.module}/install.tfpl", { upro_token = var.ubuntu_pro_token, packages = join(" ", [for cmd in var.packages : "\"${cmd}\""]) })
+  }
+}
+
+resource "local_file" "install_script" {
+    content  = templatefile("${path.module}/install.tfpl", {upro_token = var.ubuntu_pro_token, packages = join(" ", [for cmd in var.packages : "\"${cmd}\""])})
+    filename = "${path.module}/install.sh"
 }
