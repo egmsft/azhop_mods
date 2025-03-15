@@ -5,3 +5,5 @@ azure-mgmt-subscription
 azure.mgmt.resource
 pyyaml
 inquirer
+azure-mgmt-keyvault
+azure-keyvault-secrets

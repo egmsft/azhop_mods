@@ -7,6 +7,8 @@ from azure.mgmt.compute import ComputeManagementClient
 from azure.identity import AzureCliCredential
 from azure.mgmt.subscription import SubscriptionClient
 from azure.mgmt.resource import ResourceManagementClient
+from azure.mgmt.keyvault import KeyVaultManagementClient
+from azure.keyvault.secrets import SecretClient
 
 def confirm_delete():
     q = [
@@ -30,7 +32,7 @@ def get_delete_list(resource_type, list_of_choices):
 def get_target(resource_type, list_of_choices):
     prompt = f"Select the {resource_type} you want to use"
     q = [
-        inquirer.List("target", message=prompt, choices=list_of_choices),
+        inquirer.List("target", message=prompt, choices=list_of_choices)
     ]
     response = inquirer.prompt(q, theme=GreenPassion())
     return response["target"]
@@ -73,59 +75,59 @@ def main():
         target_rg = get_target("resource group", resource_group_dict.keys())
     else:
         target_rg = list(resource_group_dict.keys())[0]
-     
+         
     print(f"Using subscription: {target_sub}")
     print(f"Using resource group: {target_rg}")
 
-    # get the vms in the resource group
-    compute_client = ComputeManagementClient(credential, sub_dict[target_sub])
-    vms = compute_client.virtual_machines.list(resource_group_name=target_rg)
+    kvclient = KeyVaultManagementClient(credential, sub_dict[target_sub])
 
-    if not vms:
-        print("No VMs found.")
+    vaults = kvclient.vaults.list_by_resource_group(resource_group_name=target_rg)
+
+    if not vaults:
+        print("No Key Vaults found.")
+        exit(1)
+        
+    vault_dict = {}
+    for vault in vaults:
+        vault_dict[vault.name] = vault
+
+    if len(vault_dict) > 1:
+        kv_target = get_target("key vault", vault_dict.keys())
+    else:
+        kv_target = list(vault_dict.keys())[0]
+
+    print(f"Using key vault: {kv_target}")
+
+    # get the secrets in the key vault
+    secrets = kvclient.secrets.list(resource_group_name=target_rg, vault_name=kv_target)
+
+    if not secrets:
+        print("No secrets found.")
         exit(1)
 
-    # create a dictionary of vms where the key is vm.name and the value is the vm object
-    vm_dict = {}
-    for vm in vms:
-        vm_dict[vm.name] = vm
+    secret_dict = {}
+    for secret in secrets:
+        secret_dict[secret.name] = secret
 
-    vms_to_delete = get_delete_list("virtual machine", vm_dict.keys())
+    secrets_to_delete = get_delete_list("secret", secret_dict.keys())
+    secretClient = SecretClient(vault_dict[kv_target].properties.vault_uri, credential)
 
-    disks_to_delete = []
-
-    print("This script will delete the selected VMs and their associated disks.")
+    print("This script will delete the selected secrets.")
     print("\n")
-    for vm in vms_to_delete:
-        disks_to_delete.append(vm_dict[vm].storage_profile.os_disk.name)
-        for disk in vm_dict[vm].storage_profile.data_disks:
-            disks_to_delete.append(disk.name)
-
     print("-------------------------------------------")
-    print("Below are the VMs that will be deleted:")        
-    for vm in vms_to_delete:
-        print(f" - {vm}")
-
-    print("-------------------------------------------")
-    print("Below are the disks that will be deleted:")
-    for disk in disks_to_delete:
-        print(f" - {disk}")
+    print("Below are the secrets that will be deleted:")
+    for secret in secrets_to_delete:
+        print(f" - {secret}")
     print("-------------------------------------------")
     print("\n")
     confirm_delete()
 
-    print("Deleting VMs and disks...")
-    for vm in vms_to_delete:
-        print(f"Deleting VM: {vm}")
-        compute_client.virtual_machines.begin_delete(resource_group_name=target_rg, vm_name=vm).result()
-        print(f"Deleted VM: {vm}")
-
-    for disk in disks_to_delete:
-        print(f"Deleting Disk: {disk}")
-        compute_client.disks.begin_delete(resource_group_name=target_rg, disk_name=disk).result()
-        print(f"Deleted Disk: {disk}")
-
-    print("Completed deletion of VMs and disks.")
+    print("Deleting secrets...")
+    for secret in secrets_to_delete:
+        print(f"Deleting secret: {secret}")
+        secretClient.begin_delete_secret(secret).result()
+        print(f"Deleted secret: {secret}")
+    print("Completed deletion of secrets.")
     
 
 if __name__ == "__main__":
