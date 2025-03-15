@@ -1,0 +1,7 @@
+# Add your required packages below
+azure-identity
+azure-mgmt-compute
+azure-mgmt-subscription
+azure.mgmt.resource
+pyyaml
+inquirer
