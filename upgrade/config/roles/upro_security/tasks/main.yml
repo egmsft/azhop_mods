@@ -1,0 +1,6 @@
+---
+# chrony.conf for different OS versions https://docs.microsoft.com/en-us/azure/virtual-machines/linux/time-sync
+# On Ubuntu 19.10 and later versions, Red Hat Enterprise Linux, and CentOS 8.x, chrony is configured to use a PTP source clock. 
+
+- name: Perform OS dependent configuration tasks
+  include_tasks: "{{ansible_distribution}}.yml"

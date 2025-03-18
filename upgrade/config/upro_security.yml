@@ -1,0 +1,31 @@
+# This looks crazy but in order for this playbook to run from a pipeline, the jumpbox dummy need to be added, otherwise there is an unable to connect message
+- name: jumpbox dummy
+  hosts: jumpbox
+  become: true
+
+- hosts: jumpbox, scheduler, ondemand, ccportal, grafana, jumpbox 
+  become: true
+  gather_facts: no
+  vars_files:
+    - '{{global_config_file}}'
+
+  tasks:
+  - name: Wait 300 seconds for the nodes to be ready
+    wait_for_connection:
+      timeout: 300
+  - name: Gather facts for first time
+    setup:
+
+  - name: Read Password from KV
+    command: az keyvault secret show --vault-name {{key_vault}} -n ubuntu-pro-token --query "value" -o tsv
+    delegate_to: localhost
+    connection: local
+    register: token
+    become: false
+    run_once: true
+
+  - name: Install security packages and configure Ubuntu Pro
+    include_role: 
+      name: upro_security
+    vars: 
+      upro_token: "{{ token.stdout }}"
