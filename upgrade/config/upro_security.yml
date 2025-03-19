@@ -16,7 +16,7 @@
   - name: Gather facts for first time
     setup:
 
-  - name: Read Password from KV
+  - name: Read token from KV
     command: az keyvault secret show --vault-name {{key_vault}} -n ubuntu-pro-token --query "value" -o tsv
     delegate_to: localhost
     connection: local
