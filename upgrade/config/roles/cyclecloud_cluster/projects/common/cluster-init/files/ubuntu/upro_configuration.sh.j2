@@ -13,7 +13,7 @@ mkdir -p /opt/cycle/jetpack/scripts
 cat >>/opt/cycle/jetpack/scripts/onTerminate.sh << EOF
 #!/bin/sh
 
-pro detach 
+pro detach --assume-yes
 /bin/sleep 5
 
 jetpack log "detached $(hostname) from ubuntu pro"
@@ -23,7 +23,7 @@ EOF
 cat >>/opt/cycle/jetpack/scripts/onPreempt.sh << EOF
 #!/bin/sh
 
-pro detach 
+pro detach --assume-yes
 /bin/sleep 5
 
 jetpack log "detached $(hostname) from ubuntu pro"
