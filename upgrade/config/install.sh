@@ -190,9 +190,9 @@ case $TARGET in
     run_playbook ood-custom
     run_playbook telegraf
     run_playbook chrony
-    run_playbook ge_security
+    run_playbook upro_security
   ;;
-  ad | ad2 | linux | add_users | add_local_users | ccportal | chrony | cccluster | scheduler | grafana | telegraf | ood-custom | remove_users | tests | dns | ge_security)
+  ad | ad2 | linux | add_users | add_local_users | ccportal | chrony | cccluster | scheduler | grafana | telegraf | ood-custom | remove_users | tests | dns | upro_security)
     run_playbook $TARGET
   ;;
   ood)
