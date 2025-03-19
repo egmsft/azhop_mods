@@ -1,0 +1,97 @@
+
+################################
+## Cluster Configuration File ##
+################################
+
+[cluster azhop-OpenPBS]
+FormLayout = selectionpanel
+Category = Azure HPC OnDemand Platform 
+
+Autoscale = true
+
+    [[node defaults]]
+    UsePublicNetwork = false
+    Credentials = azure
+    ImageName = OpenLogic:CentOS-HPC:7_9-gen2:latest
+    SubnetId = {{ cc_subnetid }}
+    Region = {{ cc_region }}
+    KeyPairLocation = ~/.ssh/cyclecloud.pem
+    EnableAcceleratedNetworking = false
+    Interruptible = false
+    {% if compute_mi_id is defined and compute_mi_id|length %}
+    Azure.Identities = {{ compute_mi_id }}
+    {% endif %}
+    EnableTerminateNotification = true
+    TerminateNotificationTimeout = 10m
+
+        [[[configuration]]]
+        keepalive.timeout = 3600 # The amount of time in seconds to keep a node "alive" if it has not finished installing/configuring software.
+        cyclecloud.converge_on_boot = true
+        # False => This is to avoid hostnames to be renamed ip-XXXXXXXX
+        cyclecloud.hosts.standalone_dns.enabled = false
+
+        # Disable normal NFS exports and mounts
+        cyclecloud.mounts.sched.disabled = true
+        cyclecloud.mounts.shared.disabled = true
+        cyclecloud.exports.sched.disabled = true
+        cyclecloud.exports.shared.disabled = true
+        cyclecloud.exports.sched.samba.enabled = false
+        cyclecloud.exports.shared.samba.enabled = false
+        cyclecloud.exports.defaults.samba.enabled = false
+        cshared.server.legacy_links_disabled = true
+
+        # Autoscale settings - If not defined default to the CycleCloud value which is 1800 seconds
+        {% if autoscale.idle_timeout is defined %}
+        cyclecloud.cluster.autoscale.idle_time_after_jobs = {{autoscale.idle_timeout}}
+        cyclecloud.cluster.autoscale.idle_time_before_jobs = {{autoscale.idle_timeout}}
+        {% endif %}
+
+        [[[volume boot]]] 
+        StorageAccountType = StandardSSD_LRS
+
+        [[[cluster-init common:default:1.0.0]]]
+        [[[cluster-init openpbs:default:1.0.0]]]
+
+{% for queue in cc_queues %}
+    [[nodearray {{ queue.name }}]]
+    MachineType = {{ queue.vm_size }} 
+  {% if queue.max_core_count is defined %}
+    MaxCoreCount = {{ queue.max_core_count }}
+  {% endif %}
+  {% if queue.max_count is defined %}
+    MaxCount = {{ queue.max_count }}
+  {% endif %}
+  {% if queue.EnableAcceleratedNetworking is defined %}
+    EnableAcceleratedNetworking = {{ queue.EnableAcceleratedNetworking }}
+  {% endif %}
+  {% if queue.spot is defined %}
+    Interruptible = {{queue.spot}}
+  {% endif %}
+    Azure.MaxScaleSetSize = {{ queue.MaxScaleSetSize | default(100) }}
+    EphemeralOSDisk = {{ queue.EphemeralOSDisk | default(false) }}
+    # Lookup image version for that queue
+  {% if cc_image_lookup is iterable and queue.name in cc_image_lookup %}
+    ImageName = {{ cc_image_lookup[queue.name] }}
+  {% else %}
+    ImageName = {{ queue.image }}
+  {% endif %}
+  {% if queue.plan is defined %}
+    {% set plan_details = queue.plan.split(':') %}
+    ImagePlan.Publisher = {{ plan_details[0] }}
+    ImagePlan.Product = {{ plan_details[1] }}
+    ImagePlan.Name = {{ plan_details[2] }}
+  {% endif %}
+  {% if queue.location is defined %}
+    SubnetId = {{ queue.subnet }}
+    Region = {{ queue.location }}    
+  {% endif %}
+        [[[configuration]]]
+        healthchecks.enabled = {{ queue.healthchecks | default(true) }}
+        pbspro.slot_type = {{ queue.name }}
+        # Specific Autoscale settings
+        {% if queue.idle_timeout is defined %}
+        cyclecloud.cluster.autoscale.idle_time_after_jobs = {{queue.idle_timeout}}
+        cyclecloud.cluster.autoscale.idle_time_before_jobs = {{queue.idle_timeout}}
+        {% endif %}
+        [[[cluster-init enroot:default:1.0.0]]]
+{% endfor %}

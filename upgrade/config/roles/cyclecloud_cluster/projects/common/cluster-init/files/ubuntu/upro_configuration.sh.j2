@@ -1,0 +1,35 @@
+#!/bin/bash
+packages="libnl-3-dev libnl-genl-3-dev unzip"
+
+if ! dpkg -l $packages ; then
+    echo "Installing packages $packages"
+    apt-get install -y $packages
+fi
+
+echo "pro attach {{ ubuntu_pro_token }}"
+
+mkdir -p /opt/cycle/jetpack/scripts
+
+cat >>/opt/cycle/jetpack/scripts/onTerminate.sh << EOF
+#!/bin/sh
+
+pro detach 
+/bin/sleep 5
+
+jetpack log "detached $(hostname) from ubuntu pro"
+
+EOF
+
+cat >>/opt/cycle/jetpack/scripts/onPreempt.sh << EOF
+#!/bin/sh
+
+pro detach 
+/bin/sleep 5
+
+jetpack log "detached $(hostname) from ubuntu pro"
+EOF
+
+chmod +x /opt/cycle/jetpack/scripts/onTerminate.sh
+chmod +x /opt/cycle/jetpack/scripts/onPreempt.sh
+
+
