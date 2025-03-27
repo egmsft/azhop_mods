@@ -65,6 +65,15 @@ resource "azurerm_linux_virtual_machine" "custom_vm" {
   #    version   = var.image.version 
   #}
   source_image_id = var.image_id
+
+    dynamic "plan" {
+    for_each = try (length(var.image_plan.name) > 0, false) ? [1] : []
+    content {
+        name      = var.image_plan.name
+        publisher = var.image_plan.publisher
+        product   = var.image_plan.product
+    }
+  }
 }
 
 #resource "azurerm_virtual_machine_run_command" "install_run_cmd" {

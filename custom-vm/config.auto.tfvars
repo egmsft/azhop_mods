@@ -16,6 +16,12 @@ admin  = {
 }
 
 image_id = ""
+
+image_plan = {
+    name      = ""
+    publisher = ""
+    product   = ""
+}
 #ubuntu_pro_token = ""
 
 #packages = [ "wget", "git", "curl", "unzip" ]

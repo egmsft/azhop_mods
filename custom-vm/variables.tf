@@ -60,6 +60,21 @@ variable "vm_size" {
   
 }
 
+variable "image_plan" {
+    description = "The plan for the image to use for the virtual machine."
+    type        = object({
+        name      = string
+        publisher = string
+        product   = string
+    })
+    default = {
+      name      = ""
+      publisher = ""
+      product   = ""
+    }
+  
+}
+
 #variable "ubuntu_pro_token" {
 #  description = "Ubuntu Pro token for the VM."
 #  type        = string
