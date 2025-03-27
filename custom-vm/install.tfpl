@@ -1,0 +1,15 @@
+#!/bin/bash
+
+
+sudo apt-get update
+
+pkgs=(${packages})
+
+for pkg in "$${pkgs[@]}"; do 
+
+    sudo apt-get install -y $pkg
+
+done
+
+
+sudo pro attach ${upro_token}
