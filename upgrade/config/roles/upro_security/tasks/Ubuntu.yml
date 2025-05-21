@@ -6,34 +6,26 @@
     lock_timeout : 180
 
 - name: Running pro status 
-  ansible.builtin.command: "pro status --format yaml"
+  ansible.builtin.shell: "pro status --format yaml | grep -o 'attached: [^,}]*' | awk '{print $2}'"
   register: status
 
 - name: Checking if VM is a registered host
   set_fact: 
-    status_yaml: "{{ status.stdout | from_yaml }}"
-
+    attached: "{{ status.stdout | lower | bool }}"
 
 - name: Attach host to Ubunto Pro Subscription
-  when: not status_yaml.attached
+  when: not attached
   block:
     - name: running pro attach <token>
-      ansible.builtin.command: "echo pro attach {{ ubuntu_pro_token }}"
+      ansible.builtin.command: "pro attach {{ ubuntu_pro_token }}"
       vars:
         ubuntu_pro_token: "{{ upro_token }}"
 
-    #- name: print var
-    #  debug: 
-    #    var: upro_token
-
-    #- name: Wait 5 seconds
-    #  ansible.builtin.command: "sleep 10"
-
     - name: Checking host registration update
-      ansible.builtin.command: "pro status --format yaml"
+      ansible.builtin.shell: "pro status --format yaml | grep -o 'attached: [^,}]*' | awk '{print $2}'"
       register: updated_status
 
     - name: Verifying registration
       set_fact: 
-        updated_status_yaml: "{{ updated_status.stdout | from_yaml }}"
-      failed_when: not updated_status_yaml.attached
+        updated_attachment: "{{ updated_status.stdout | lower | bool }}"
+      failed_when: not updated_attachment
